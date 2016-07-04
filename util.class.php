@@ -47,4 +47,83 @@ function getAbbrRegion($province, $region) {
 	
 	return ($ret != "") ? $ret : $region;
 }
+
+/*
+ * For foreign sites using accented words.
+ * Returns a clean url (e.g: la-vita-e-bella) using a regular phrase
+ */
+function seo_link($data) {
+	$trimmed = ltrim(rtrim($data));
+	$convert = mb_convert_case($trimmed, MB_CASE_LOWER, "UTF-8");
+
+	$convert = preg_replace("/(-)\\1+/", "", $convert);
+	//
+	$patterns = array('/Á/','/É/','/Í/','/Ó/','/Ú/',
+					'/À/','/È/','/Ì/','/Ò/','/Ù/',
+					'/á/','/é/','/í/','/ó/','/ú/','/ý/',
+					'/à/','/è/','/ì/','/ò/','/ù/',
+					'/â/','/ê/','/î/','/ô/','/û/',
+					'/Â/','/Ê/','/Î/','/Ô/','/Û/',
+					'/ä/','/ë/','/ï/','/ö/','/ü/','/ÿ/',
+					'/Ä/','/Ë/','/Ï/','/Ö/','/Ü/','/Ÿ/',
+					'/ã/','/õ/','/ñ/','/å/','/ø/','/š/',
+					'/Ã/','/Õ/','/Ñ/','/Å/','/Ø/','/Š/',
+					'/ç/','/&#287;/','/&#305;/','/ö/','/&#351;/','/ü/',
+					'/€/','/£/','/¥/','/$/','/#/','/&/','/%/', '/,/', '/"/');
+	
+	$replace  = array('a' , 'e' , 'i' , 'o' , 'u' ,
+					 'a' , 'e' , 'i' , 'o' , 'u' ,
+					 'a' , 'e' , 'i' , 'o' , 'u' ,'y',
+					 'a' , 'e' , 'i' , 'o' , 'u' ,
+					 'a' , 'e' , 'i' , 'o' , 'u' ,
+					 'a' , 'e' , 'i' , 'o' , 'u' ,
+					 'a' , 'e' , 'i' , 'o' , 'u' ,'y',
+					 'a' , 'e' , 'i' , 'o' , 'u' ,'y',
+					 'a' , 'o' , 'n' , 'a' , 'q' ,'s',
+					 'a' , 'o' , 'n' , 'a' , 'q' ,'s',
+					 'c' , 'g' , 'i' , 'o' , 's' ,'u',
+					 ''  , ''  , ''  , ''  , '' , '' , '', '', '');
+	$str = preg_replace($patterns,$replace,$convert);
+	$str =  preg_replace("/\ +/", "-", $str);
+	return $str;
+}
+
+/*
+ * Returns a given array well formed in UTF8
+ */
+function utf8_converter($array) {
+	array_walk_recursive($array, function(&$item, $key) {
+		if(!mb_detect_encoding($item, 'utf-8', true)){
+			$item = utf8_encode($item);
+		}
+	});
+	return $array;
+}
+
+/*
+ * Multidimensional array sorter
+ * E.g: $ret = array_msort($results, array('COL_NAME' => SORT_ASC));
+ */
+function array_msort($array, $cols) {
+	$colarr = array();
+	foreach ($cols as $col => $order) {
+		$colarr[$col] = array();
+		foreach ($array as $k => $row) { $colarr[$col]['_'.$k] = mb_strtolower($row[$col], 'UTF-8'); }
+	}
+	$eval = 'array_multisort(';
+	foreach ($cols as $col => $order) {
+		$eval .= '$colarr[\''.$col.'\'],'.$order.',';
+	}
+	$eval = substr($eval,0,-1).');';
+	eval($eval);
+	$ret = array();
+	foreach ($colarr as $col => $arr) {
+		foreach ($arr as $k => $v) {
+			$k = substr($k,1);
+			if (!isset($ret[$k])) $ret[$k] = $array[$k];
+			$ret[$k][$col] = $array[$k][$col];
+		}
+	}
+	return $ret;
+}
 ?>
